@@ -1,0 +1,134 @@
+name: CI
+
+on:
+    push:
+        branches: [main, develop]
+    pull_request:
+        branches: [main, develop]
+
+concurrency:
+    group: ci-${{ github.ref }}
+    cancel-in-progress: true
+
+permissions:
+    contents: read
+
+jobs:
+    lint:
+        name: Lint & Format
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v4
+              with:
+                  enable-cache: true
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.13"
+
+            - name: Install dependencies
+              run: uv sync --extra dev
+
+            - name: Ruff lint
+              run: uv run ruff check src/ tests/
+
+            - name: Ruff format check
+              run: uv run ruff format --check src/ tests/
+
+    typecheck:
+        name: Type Check
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v4
+              with:
+                  enable-cache: true
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.13"
+
+            - name: Install dependencies
+              run: uv sync --extra dev
+
+            - name: Mypy
+              run: uv run mypy src/
+
+    test:
+        name: Test (Python ${{ matrix.python-version }})
+        runs-on: ubuntu-latest
+        strategy:
+            fail-fast: false
+            matrix:
+                python-version: ["3.11", "3.12", "3.13"]
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v4
+              with:
+                  enable-cache: true
+
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v5
+              with:
+                  python-version: ${{ matrix.python-version }}
+
+            - name: Install dependencies
+              run: uv sync --extra dev
+
+            - name: Run tests with coverage
+              run: uv run pytest --cov=vidara --cov-report=xml --cov-report=term-missing
+
+            - name: Upload coverage to Codecov
+              if: matrix.python-version == '3.13'
+              uses: codecov/codecov-action@v4
+              with:
+                  file: coverage.xml
+                  fail_ci_if_error: false
+
+    a11y:
+        name: Accessibility Audit
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v4
+              with:
+                  enable-cache: true
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.13"
+
+            - name: Install dependencies
+              run: uv sync --extra dev
+
+            - name: Run accessibility tests
+              run: uv run pytest -m a11y --tb=short
+
+    ci-status:
+        name: CI Status
+        if: always()
+        needs: [lint, typecheck, test, a11y]
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check all jobs
+              run: |
+                  if [[ "${{ needs.lint.result }}" == "failure" ]] ||
+                     [[ "${{ needs.typecheck.result }}" == "failure" ]] ||
+                     [[ "${{ needs.test.result }}" == "failure" ]] ||
+                     [[ "${{ needs.a11y.result }}" == "failure" ]]; then
+                    echo "One or more CI jobs failed"
+                    exit 1
+                  fi
+                  echo "All CI checks passed"

@@ -1,0 +1,103 @@
+{
+    "folders": [
+        {
+            "path": ".",
+        },
+    ],
+    "settings": {
+        "python.defaultInterpreterPath": ".venv/Scripts/python.exe",
+        "python.analysis.typeCheckingMode": "strict",
+        "python.analysis.autoImportCompletions": true,
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests/"],
+
+        "[python]": {
+            "editor.formatOnSave": true,
+            "editor.defaultFormatter": "charliermarsh.ruff",
+            "editor.codeActionsOnSave": {
+                "source.fixAll": "explicit",
+                "source.organizeImports": "explicit",
+            },
+            "editor.rulers": [100],
+        },
+
+        "editor.formatOnSave": true,
+        "editor.tabSize": 4,
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true,
+
+        "files.exclude": {
+            "**/__pycache__": true,
+            "**/*.pyc": true,
+            "**/.mypy_cache": true,
+            "**/.pytest_cache": true,
+            "**/.ruff_cache": true,
+            "**/htmlcov": true,
+            "**/*.egg-info": true,
+        },
+
+        "search.exclude": {
+            ".venv": true,
+            "dist": true,
+            "build": true,
+            "docs/_build": true,
+        },
+
+        "github.copilot.chat.codeGeneration.useInstructionFiles": true,
+    },
+    "extensions": {
+        "recommendations": [
+            "charliermarsh.ruff",
+            "ms-python.python",
+            "ms-python.mypy-type-checker",
+            "tamasfe.even-better-toml",
+            "eamodio.gitlens",
+            "github.vscode-pull-request-github",
+            "github.copilot",
+            "github.copilot-chat",
+            "redhat.vscode-yaml",
+            "streetsidesoftware.code-spell-checker",
+            "njpwerner.autodocstring",
+        ],
+    },
+    "tasks": {
+        "version": "2.0.0",
+        "tasks": [
+            {
+                "label": "Test",
+                "type": "shell",
+                "command": "uv run pytest --cov=vidara --cov-report=term-missing",
+                "group": { "kind": "test", "isDefault": true },
+                "problemMatcher": [],
+            },
+            {
+                "label": "Lint",
+                "type": "shell",
+                "command": "uv run ruff check src/ tests/",
+                "group": "build",
+                "problemMatcher": [],
+            },
+            {
+                "label": "Format",
+                "type": "shell",
+                "command": "uv run ruff format src/ tests/",
+                "group": "build",
+                "problemMatcher": [],
+            },
+            {
+                "label": "Type Check",
+                "type": "shell",
+                "command": "uv run mypy src/",
+                "group": "build",
+                "problemMatcher": [],
+            },
+            {
+                "label": "All Checks",
+                "type": "shell",
+                "command": "uv run ruff check src/ tests/ && uv run ruff format --check src/ tests/ && uv run mypy src/ && uv run pytest --cov=vidara",
+                "group": "build",
+                "problemMatcher": [],
+            },
+        ],
+    },
+}

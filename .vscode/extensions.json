@@ -1,0 +1,15 @@
+{
+  "recommendations": [
+    "charliermarsh.ruff",
+    "ms-python.python",
+    "ms-python.mypy-type-checker",
+    "tamasfe.even-better-toml",
+    "eamodio.gitlens",
+    "github.vscode-pull-request-github",
+    "github.copilot",
+    "github.copilot-chat",
+    "redhat.vscode-yaml",
+    "streetsidesoftware.code-spell-checker",
+    "njpwerner.autodocstring"
+  ]
+}
