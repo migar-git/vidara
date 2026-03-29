@@ -1,0 +1,29 @@
+{
+  "notebook_name": "vidara \u2014 ClawMedia Digital",
+  "description": "Vidara Python library \u2014 UV-managed, src layout",
+  "group": "Infrastructure",
+  "sources": [
+    {
+      "file": "MEMORY.md",
+      "description": "Persistent memory map \u2014 key decisions and context"
+    },
+    {
+      "file": "AGENT.md",
+      "description": "Agency manifest \u2014 authority, commands, LLM config"
+    },
+    {
+      "file": "AGENTS.md",
+      "description": "Swarm agent assignments"
+    },
+    {
+      "file": "PORTFOLIO.md",
+      "description": "Portfolio identity card"
+    },
+    {
+      "file": "docs/ARCHITECTURE.md",
+      "description": "3-tier architecture documentation"
+    }
+  ],
+  "export_instructions": "To add to NotebookLM: open NotebookLM, create a notebook named above, upload each file listed in sources[], or share the GitHub repo URL if public.",
+  "generated": "2026-03-29"
+}
