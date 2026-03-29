@@ -1,0 +1,65 @@
+name: Swarm Gate
+
+on:
+  pull_request:
+    branches: [main, master]
+  push:
+    branches: [main, master]
+
+jobs:
+  swarm-gate:
+    name: Agency Swarm Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify AGENT.md present
+        run: |
+          if [ ! -f AGENT.md ]; then
+            echo "❌ AGENT.md missing — repo is not registered with the agency"
+            echo "Run: cp /path/to/AGENT.md.template AGENT.md && fill in fields"
+            exit 1
+          fi
+          echo "✅ AGENT.md found"
+
+      - name: Verify AGENTS.md present
+        run: |
+          if [ ! -f AGENTS.md ]; then
+            echo "❌ AGENTS.md missing — swarm agent assignments not defined"
+            echo "Generate with: python dev-analytics/generate_agents_md.py <repo>"
+            exit 1
+          fi
+          echo "✅ AGENTS.md found"
+
+      - name: Validate AGENT.md schema
+        run: |
+          python3 - <<'EOF'
+          import re, sys
+          content = open("AGENT.md").read()
+          required = ["repo:", "type:", "description:", "authority:", "max_auto_level:", "commands:"]
+          missing = [f for f in required if f not in content]
+          if missing:
+            print(f"❌ AGENT.md missing fields: {missing}")
+            sys.exit(1)
+          print("✅ AGENT.md schema valid")
+          EOF
+
+      - name: Validate AGENTS.md schema
+        run: |
+          python3 - <<'EOF'
+          import re, sys
+          content = open("AGENTS.md").read()
+          required = ["schema_version:", "Systems Architect", "Repo Executor", "Build & Automation", "Final Arbiter"]
+          missing = [f for f in required if f not in content]
+          if missing:
+            print(f"❌ AGENTS.md missing sections: {missing}")
+            sys.exit(1)
+          print("✅ AGENTS.md schema valid")
+          EOF
+
+      - name: Swarm gate passed
+        run: |
+          echo "✅ Swarm gate passed — all agency governance files present and valid"
+          echo "Repo: $(grep 'repo:' AGENT.md | head -1)"
+          echo "Authority ceiling: $(grep 'max_auto_level:' AGENT.md | head -1)"
