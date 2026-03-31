@@ -116,3 +116,27 @@ human_required:
 ## Runbook Reference
 
 Full protocol: `dev-analytics/SWARM_RUNBOOK.md`
+
+---
+
+## Time Rules
+
+```yaml
+time_rules:
+  timezone: UTC
+  format: ISO 8601
+  examples:
+    datetime: "2026-03-30T14:30:00Z"
+    date_only: "2026-03-30"
+    log_entry: "2026-03-30T14:30:00Z — event description"
+  enforcement:
+    - all_timestamps_utc: true
+    - no_local_timezone_assumptions: true
+    - no_relative_dates_in_commits: true
+    - session_logs_use_iso_date: true
+    - git_commit_messages_use_absolute_date: true
+    - memory_files_use_absolute_date: true
+  rationale: >
+    Agents run across timezones and machines. UTC ISO 8601 is the only unambiguous
+    format. Relative dates in logs/memory become meaningless between sessions.
+```
