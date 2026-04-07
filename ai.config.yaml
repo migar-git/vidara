@@ -1,0 +1,51 @@
+# ai.config.yaml — myprd AI provider routing and task configuration
+# Never hardcode API keys here; always use env var references.
+ai:
+  providers:
+    cloud:
+      type: openai-compatible
+      base_url: "https://api.openai.com/v1"
+      model: "gpt-4o"
+      api_key_env: "AI_API_KEY"
+    local:
+      type: openai-compatible
+      base_url: "http://localhost:11434/v1"
+      model: "llama3.1"
+
+  routing:
+    default: cloud
+    local_only_paths:
+      - "docs/10-governance/**"
+    fallback:
+      enabled: true
+      order: [cloud, local]
+
+  tasks:
+    generate:
+      provider: cloud
+      temperature: 0.3
+      max_tokens: 4000
+      system_prompt: |
+        You are a documentation architect. Generate content following the template
+        structure exactly. Fill every required section. Set status to Draft.
+        Include exit criteria checklist at end of document.
+    review:
+      provider: cloud
+      temperature: 0.1
+      max_tokens: 2000
+      system_prompt: |
+        You are a documentation reviewer. Evaluate each exit criterion as:
+        PASS / WARN / FAIL. Flag thin sections. Check cross-doc consistency.
+    staleness:
+      provider: cloud
+      embedding_model: "text-embedding-3-small"
+      similarity_threshold: 0.7
+    postmortem_patterns:
+      provider: cloud
+      temperature: 0.2
+      max_tokens: 3000
+
+  ci:
+    ai_review_required: false
+    post_as_pr_comment: true
+    max_cost_per_review: 0.50
