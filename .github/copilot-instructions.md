@@ -126,3 +126,9 @@ Dev dependencies: pytest, pytest-cov, ruff, mypy, pre-commit, sphinx
 - Do NOT write components without corresponding tests
 - Do NOT use `print()` for output — use the renderer system
 - Do NOT hardcode colors/sizes — use design tokens
+
+## Time Rules
+- All timestamps UTC ISO 8601 (e.g. `2026-03-30T14:30:00Z`)
+- No local timezone assumptions — agents run across machines
+- Use absolute dates in commit messages, logs, and memory files
+- No relative dates ("yesterday", "last week") in any persisted text

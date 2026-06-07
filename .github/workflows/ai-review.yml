@@ -1,0 +1,53 @@
+name: ai-doc-review
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+
+jobs:
+  ai-review:
+    name: AI Documentation Quality Gate
+    runs-on: ubuntu-latest
+    if: ${{ vars.AI_REVIEW_ENABLED == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get changed doc files
+        id: changed
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'docs/**' | tr '\n' ' ')
+          echo "files=$CHANGED" >> $GITHUB_OUTPUT
+          echo "Changed docs: $CHANGED"
+
+      - name: Detect sensitivity level
+        id: sensitivity
+        run: |
+          if echo "${{ steps.changed.outputs.files }}" | grep -q "10-governance\|security\|compliance\|privacy"; then
+            echo "level=restricted" >> $GITHUB_OUTPUT
+            echo "provider=local" >> $GITHUB_OUTPUT
+          else
+            echo "level=standard" >> $GITHUB_OUTPUT
+            echo "provider=cloud" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run AI doc review (cloud)
+        if: steps.sensitivity.outputs.provider == 'cloud'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+        run: |
+          if [ -f "scripts/ai-review.sh" ]; then
+            bash scripts/ai-review.sh ${{ steps.changed.outputs.files }}
+          else
+            echo "scripts/ai-review.sh not found — install myprd ai-docs tier to enable"
+          fi
+
+      - name: Run AI doc review (local/restricted)
+        if: steps.sensitivity.outputs.provider == 'local'
+        run: |
+          echo "Restricted docs detected — local LLM policy"
+          echo "Files: ${{ steps.changed.outputs.files }}"
+          echo "Configure Ollama or set AI_REVIEW_ENABLED=false for air-gapped envs"

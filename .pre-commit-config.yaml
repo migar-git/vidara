@@ -26,3 +26,8 @@ repos:
       - id: mypy
         additional_dependencies: [pydantic>=2.0]
         args: [--strict]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks

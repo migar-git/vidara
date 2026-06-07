@@ -1,0 +1,89 @@
+name: doc-lint
+
+on:
+  pull_request:
+    paths:
+      - 'docs/**'
+      - '*.md'
+      - '.markdownlint.json'
+
+jobs:
+  lint:
+    name: Markdown + Frontmatter Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install markdownlint-cli
+        run: npm install -g markdownlint-cli
+
+      - name: Lint all markdown files
+        run: markdownlint 'docs/**/*.md' '*.md' --config .markdownlint.json --ignore node_modules
+
+      - name: Validate YAML frontmatter
+        run: |
+          python3 - << 'PYEOF'
+          import sys, os, re
+          from pathlib import Path
+
+          REQUIRED_FIELDS = ["title", "owner", "status", "last_reviewed"]
+          VALID_STATUSES = {"Draft", "Active", "Review", "Deprecated", "Archived"}
+
+          errors = []
+          docs_dir = Path("docs")
+          if not docs_dir.exists():
+              print("No docs/ directory — skipping frontmatter check")
+              sys.exit(0)
+
+          for path in docs_dir.rglob("*.md"):
+              if path.name.startswith("_"):
+                  continue
+              text = path.read_text(encoding="utf-8", errors="ignore")
+              match = re.match(r"^---\n(.*?)\n---", text, re.DOTALL)
+              if not match:
+                  errors.append(f"{path}: missing YAML frontmatter block")
+                  continue
+              fm = match.group(1)
+              for field in REQUIRED_FIELDS:
+                  if not re.search(rf"^{field}:", fm, re.MULTILINE):
+                      errors.append(f"{path}: missing required field '{field}'")
+              status_match = re.search(r"^status:\s*(.+)$", fm, re.MULTILINE)
+              if status_match:
+                  status = status_match.group(1).strip().strip('"')
+                  if status not in VALID_STATUSES:
+                      errors.append(f"{path}: invalid status '{status}' (must be one of {sorted(VALID_STATUSES)})")
+
+          if errors:
+              for e in errors:
+                  print(f"ERROR: {e}", file=sys.stderr)
+              sys.exit(1)
+          checked = sum(1 for _ in docs_dir.rglob("*.md") if not _.name.startswith("_"))
+          print(f"Frontmatter valid ({checked} files checked)")
+          PYEOF
+
+      - name: Check for broken internal doc links
+        run: |
+          python3 - << 'PYEOF'
+          import re
+          from pathlib import Path
+
+          docs_dir = Path("docs")
+          if not docs_dir.exists():
+              print("No docs/ directory — skipping link check")
+              exit(0)
+
+          warnings = []
+          for path in docs_dir.rglob("*.md"):
+              text = path.read_text(encoding="utf-8", errors="ignore")
+              for match in re.finditer(r"\[.*?\]\(([^)]+)\)", text):
+                  href = match.group(1)
+                  if href.startswith("http") or href.startswith("#") or href.startswith("mailto"):
+                      continue
+                  target = (path.parent / href).resolve()
+                  if not target.exists():
+                      warnings.append(f"{path}: broken link → {href}")
+
+          for w in warnings:
+              print(f"WARN: {w}")
+          # Advisory only — broken links do not block the PR
+          PYEOF
