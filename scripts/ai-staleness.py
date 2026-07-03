@@ -3,15 +3,17 @@
 scripts/ai-staleness.py — Detect docs that have drifted from codebase
 Usage: python3 scripts/ai-staleness.py [--path docs/03-architecture] [--threshold 0.7]
 """
-import sys
-import os
-import glob
-import pathlib
+
 import argparse
+import glob
+import os
+import pathlib
+import sys
 
 try:
-    import numpy as np
     import httpx
+    import numpy as np
+
     HAS_DEPS = True
 except ImportError:
     HAS_DEPS = False
@@ -24,7 +26,7 @@ def cosine_similarity(a, b):
 def get_embedding(text: str, model: str = "text-embedding-3-small") -> list:
     api_key = os.environ.get("AI_API_KEY")
     if not api_key:
-        raise EnvironmentError("AI_API_KEY not set")
+        raise OSError("AI_API_KEY not set")
     resp = httpx.post(
         "https://api.openai.com/v1/embeddings",
         headers={"Authorization": f"Bearer {api_key}"},
